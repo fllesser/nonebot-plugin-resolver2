@@ -7,15 +7,16 @@ import pytest
 @pytest.mark.asyncio
 async def test_ncm():
     from nonebot_plugin_resolver2.download import download_audio
-    from nonebot_plugin_resolver2.parsers import NCMParser
+    from nonebot_plugin_resolver2.parsers import KuGouParser
 
-    parser = NCMParser()
+    parser = KuGouParser()
 
-    urls = ["https://music.163.com/song?id=1948109333"]
+    urls = ["https://t3.kugou.com/song.html?id=AeZ3f7EqV2"]
 
     async def test_parse_ncm(url: str) -> None:
-        logger.info(f"{url} | 开始解析网易云音乐")
-        result = await parser.parse_ncm(url)
+        logger.info(f"{url} | 开始解析酷狗音乐")
+
+        result = await parser.parse_share_url(url)
         logger.debug(f"{url} | result: {result}")
 
         # 下载音频
