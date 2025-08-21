@@ -4,7 +4,7 @@ import re
 
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
-from ..config import NICKNAME
+from ..config import NICKNAME, PIC_MERGE_MESSAGE
 from ..download import DOWNLOADER
 from ..exception import handle_exception
 from ..parsers import DouyinParser
@@ -30,7 +30,11 @@ async def _(searched: re.Match[str] = KeyPatternMatched()):
     # 存在普通图片
     if pic_urls := parse_result.pic_urls:
         paths = await DOWNLOADER.download_imgs_without_raise(pic_urls)
-        segs.extend(obhelper.img_seg(path) for path in paths)
+        pic_segs = [obhelper.img_seg(path) for path in paths]
+        if PIC_MERGE_MESSAGE:
+            segs.extend(Message(pic_segs))
+        else:
+            segs.extend(pic_segs)
 
     # 存在动态图片
     if dynamic_urls := parse_result.dynamic_urls:

@@ -36,6 +36,8 @@ class Config(BaseModel):
     r_need_upload: bool = False
     # 4 条以内消息，是否需要合并转发
     r_need_forward: bool = True
+    # 图集解析，多图是否需要合成一条消息
+    r_pic_merge_message: bool = False
     # 是否使用 base64 编码发送图片，音频，视频
     r_use_base64: bool = False
     # 资源最大大小 默认 100 单位 MB
@@ -72,3 +74,5 @@ NEED_UPLOAD: bool = rconfig.r_need_upload
 NEED_FORWARD: bool = rconfig.r_need_forward
 # 是否使用 base64 编码发送图片，音频，视频
 USE_BASE64: bool = rconfig.r_use_base64
+# 是否需要合并图集消息
+PIC_MERGE_MESSAGE: bool = rconfig.r_pic_merge_message
