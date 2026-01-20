@@ -48,7 +48,10 @@ class BilibiliParser(BaseParser):
         return await self.parse_with_redirect(url)
 
     @handle("BV", r"^(?P<bvid>BV[0-9a-zA-Z]{10})(?:\s)?(?P<page_num>\d{1,3})?$")
-    @handle("/BV", r"bilibili\.com(?:/video)?/(?P<bvid>BV[0-9a-zA-Z]{10})(?:\?p=(?P<page_num>\d{1,3}))?")
+    @handle(
+        "/BV",
+        r"bilibili\.com(?:/video)?/(?P<bvid>BV[0-9a-zA-Z]{10})(?:\?p=(?P<page_num>\d{1,3}))?",
+    )
     async def _parse_bv(self, searched: Match[str]):
         """解析视频信息"""
         bvid = str(searched.group("bvid"))
@@ -57,7 +60,10 @@ class BilibiliParser(BaseParser):
         return await self.parse_video(bvid=bvid, page_num=page_num)
 
     @handle("av", r"^av(?P<avid>\d{6,})(?:\s)?(?P<page_num>\d{1,3})?$")
-    @handle("/av", r"bilibili\.com(?:/video)?/av(?P<avid>\d{6,})(?:\?p=(?P<page_num>\d{1,3}))?")
+    @handle(
+        "/av",
+        r"bilibili\.com(?:/video)?/av(?P<avid>\d{6,})(?:\?p=(?P<page_num>\d{1,3}))?",
+    )
     async def _parse_av(self, searched: Match[str]):
         """解析视频信息"""
         avid = int(searched.group("avid"))
@@ -67,10 +73,11 @@ class BilibiliParser(BaseParser):
 
     @handle("/dynamic/", r"bilibili\.com/dynamic/(?P<dynamic_id>\d+)")
     @handle("t.bili", r"t\.bilibili\.com/(?P<dynamic_id>\d+)")
+    @handle("/opus/", r"bilibili\.com/opus/(?P<dynamic_id>\d+)")
     async def _parse_dynamic(self, searched: Match[str]):
         """解析动态信息"""
         dynamic_id = int(searched.group("dynamic_id"))
-        return await self.parse_dynamic(dynamic_id)
+        return await self.parse_dynamic_or_opus(dynamic_id)
 
     @handle("live.bili", r"live\.bilibili\.com/(?P<room_id>\d+)")
     async def _parse_live(self, searched: Match[str]):
@@ -88,13 +95,7 @@ class BilibiliParser(BaseParser):
     async def _parse_read(self, searched: Match[str]):
         """解析专栏信息"""
         read_id = int(searched.group("read_id"))
-        return await self.parse_read_with_opus(read_id)
-
-    @handle("/opus/", r"bilibili\.com/opus/(?P<opus_id>\d+)")
-    async def _parse_opus(self, searched: Match[str]):
-        """解析图文动态信息"""
-        opus_id = int(searched.group("opus_id"))
-        return await self.parse_opus(opus_id)
+        return await self.parse_read(read_id)
 
     async def parse_video(
         self,
@@ -167,8 +168,8 @@ class BilibiliParser(BaseParser):
             extra={"info": ai_summary},
         )
 
-    async def parse_dynamic(self, dynamic_id: int):
-        """解析动态信息
+    async def parse_dynamic_or_opus(self, dynamic_id: int):
+        """解析动态和图文信息
 
         Args:
             url (str): 动态链接
@@ -178,6 +179,8 @@ class BilibiliParser(BaseParser):
         from .dynamic import DynamicData
 
         dynamic = Dynamic(dynamic_id, await self.credential)
+        if await dynamic.is_article():
+            return await self._parse_opus_obj(dynamic.turn_to_opus())
         dynamic_info = convert(await dynamic.get_info(), DynamicData).item
 
         author = self.create_author(dynamic_info.name, dynamic_info.avatar)
@@ -205,7 +208,7 @@ class BilibiliParser(BaseParser):
         opus = Opus(opus_id, await self.credential)
         return await self._parse_opus_obj(opus)
 
-    async def parse_read_with_opus(self, read_id: int):
+    async def parse_read(self, read_id: int):
         """解析专栏信息, 使用 Opus 接口
 
         Args:
